@@ -1,0 +1,43 @@
+/* 
+    CGScript example for a Chart Geany static label object.
+    
+    http://www.chartgeany.com/?id=cgscript
+*/
+
+ModuleLocal Property MODID[] = "f9e6bb8fc5b77fdde0f5bbfcd12c262f"; /* Do not change this line */
+ModuleLocal Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+ModuleLocal Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+ModuleLocal Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static void 
+Event()
+{
+  	
+  return;
+}
+
+
+static int
+Init ()
+{
+  SetObjectType(LABEL_OBJECT); /* Declare your module type here */
+ 
+  return CGSERR_OK;	
+}
+
+static int
+Loop ()
+{
+  
+  /* This is a static label. We need this code to run just once */
+  if (FirstRun)  
+  {
+    SetText(NULL, StrInit("CGScript Label"));
+    SetXY(NULL, 200,200);    	
+    SetColor(NULL, COLOR_CYAN); 	
+    SetFontWeight(NULL, FONTWEIGHT_BOLD);
+  }
+  
+  return CGSERR_OK;	
+}
+

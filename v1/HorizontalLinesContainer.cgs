@@ -1,0 +1,70 @@
+/*
+    CGScript example for a Chart Geany container object.
+    We add two horizontal lines: One on the top  of the visible part 
+    of the chart (highest high) and one on the bottom (lowest low).
+    A label reports the price range of the visible part of the chart.
+    
+    http://www.chartgeany.com/?id=cgscript
+*/  
+
+ModuleLocal Property MODID[] = "c01849351f72fbe579d7016cfd284774"; /* Do not change this line */
+ModuleLocal Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+ModuleLocal Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+ModuleLocal Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static void 
+Event()
+{
+  
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CONTAINER_OBJECT); /* Declare your object type here */
+      	
+  return CGSERR_OK;	
+}
+
+ModuleLocal ObjectHandler_t topline, bottomline, label;
+
+static int
+Loop()
+{
+  double top = DBL_MIN, bottom = DBL_MAX;
+  char label_cstr[32];
+  
+  if(FirstRun)
+  {	
+    topline = AddHorizontalLine();
+    SetColor(topline, COLOR_CYAN);
+    
+    bottomline = AddHorizontalLine();
+    SetColor(bottomline, COLOR_YELLOW);
+    
+    label = AddLabel();
+    SetXY(label, 100, 100);
+    SetColor(label, COLOR_MAGENTA);
+    SetFontWeight(label, FONTWEIGHT_BOLD);
+    SetFontSize(label, 14);
+  }
+    
+  for(int counter=NewestVisibleBar(); counter <= OldestVisibleBar(); counter++)
+  {
+    if(top < High(counter))
+     top = High(counter);
+     
+    if(bottom > Low(counter))
+      bottom = Low(counter);
+  }
+    
+  SetPrice(topline, top);
+  SetPrice(bottomline, bottom);
+ 
+  sprintf (label_cstr, "Price range: %10.2f", top-bottom);
+  SetText(label,StrInit(label_cstr));
+  
+  return CGSERR_OK;	
+}
+

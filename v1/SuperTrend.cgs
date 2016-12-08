@@ -1,0 +1,88 @@
+/*
+    CGScript example for SuperTrend indicator in Chart Geany.
+    
+    Supertrend indicator formula:
+    Up = (HIGH + LOW) / 2 + Multiplier * ATR
+    Down = (HIGH + LOW) / 2 - Multiplier * ATR
+    
+    http://www.chartgeany.com/?id=cgscript
+*/
+
+Property MODID[] = "31448d6efd92623be95583c7b79effa9"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static Array_t atr;
+static double value;
+static int nbrs;
+
+static void
+Calculate()
+{
+  const double multiplier = 2.0;
+  
+  atr = fATR(TF_CURRENT, GetPeriod(NULL));    
+  for(int counter = nbrs - 1; counter >= 0; counter --)
+  {
+    double newvalue;
+    if(Close(counter) > value)
+    {
+      newvalue = ((High(counter)+Low(counter))/2) - (multiplier * dArrayGet(atr, counter));
+      if(newvalue > value)
+       value = newvalue; 
+    }  
+    else
+    if(Close(counter) < value)
+    {
+       newvalue = ((High(counter)+Low(counter))/2) + (multiplier * dArrayGet(atr, counter));
+       if(newvalue < value)
+        value = newvalue;
+    }  
+     
+    ValueSet(NULL, value, counter);
+  }
+}
+
+static void 
+Event()
+{
+  if(LastEvent == EV_INPUT_VAR)	
+   Calculate();
+ 
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CURVE_OBJECT); /* Declare your module type here */
+  SetPeriod(NULL, 10);
+  
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static unsigned int lastTF  = UINT_MAX;
+  
+  if(!NeedsUpdate())
+   return CGSERR_OK;	
+  
+  if(FirstRun)
+  {
+    value = ((High(NBars(TF_CURRENT) - 1) + Low(NBars(TF_CURRENT) - 1))/2);
+    SetColorRGB(NULL, 255, 85, 0);
+  }  
+    
+  if (nbrs != NBars(TF_CURRENT) || lastTF  != TF_CURRENT)
+  {
+    lastTF  = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT); 
+    Calculate();
+  }
+  
+  return CGSERR_OK;	
+}
+

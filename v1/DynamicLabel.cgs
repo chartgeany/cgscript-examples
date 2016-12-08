@@ -1,0 +1,59 @@
+/* 
+   CGScript example for a Chart Geany dynamic label object. 
+   The yellow label prints the current timeframe in the middle top of the chart.
+   
+   http://www.chartgeany.com/?id=cgscript
+*/
+
+Property MODID[] = "e3478ddae28f5cb1e344fa08a26c0946"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static void 
+Event()
+{
+  
+  return;
+}
+
+static int
+Init ()
+{
+  SetObjectType(LABEL_OBJECT); /* Declare your module type here */
+ 
+  return CGSERR_OK;	
+}
+
+static int
+Loop ()
+{
+  String_t tf;
+  
+  /* This is a dynamic label. We need this code to run for every loop */
+  switch(TF_CURRENT)
+  {
+    case TF_DAY:
+      tf = StrInit("Daily Chart");
+      break;
+   case TF_WEEK:
+      tf = StrInit("Weekly Chart");
+      break;   
+    case TF_MONTH:
+      tf = StrInit("Monthly Chart");
+      break;   
+    case TF_YEAR:
+      tf = StrInit("Yearly Chart");
+      break;   
+    default:
+      break;  
+  }
+
+  SetText(NULL, tf);
+  SetXY(NULL, ChartWidth()/2,100);    	
+  SetColor(NULL, COLOR_YELLOW); 	
+  SetFontWeight(NULL, FONTWEIGHT_BOLD);
+  
+  return CGSERR_OK;	
+}
+

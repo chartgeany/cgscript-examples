@@ -6,7 +6,6 @@
    http://www.chartgeany.com/?id=cgscript
 */
 
-
 Property MODID[] = "d07065c820f69d8b29976619d00dcc01"; /* Do not change this line */
 Property MODAUTHOR[] = "http://chartgeany.com"; /* Enter your name and email here */
 Property MODVERSION[] = "1.0.0"; /* Enter module's version here */

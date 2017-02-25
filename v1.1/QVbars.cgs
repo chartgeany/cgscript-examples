@@ -1,0 +1,132 @@
+/* 
+   CGScript 1.1 example for a Chart Geany module.
+   This modules draws a vertical lines at the begining of each calendar quarter.
+   Turn of the grid for better results.
+   
+   http://www.chartgeany.com/?id=cgscript
+*/
+
+
+Property MODID[] = "d07065c820f69d8b29976619d00dcc01"; /* Do not change this line */
+Property MODAUTHOR[] = "http://chartgeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static Color_t  linecolor = COLOR_WHITE;
+static ObjectHandler_t linearray[1024];
+static int nlines;
+
+static void 
+Event()
+{
+  if(LastEvent == EV_INPUT_VAR)
+  {
+    for(int counter = 0; counter < nlines; counter++)
+      SetColor(linearray[counter], linecolor);
+  }
+	
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CONTAINER_OBJECT); /* Declare your object type here */
+  InputColorVariable("Color:", linecolor, &linecolor, false);   
+  return CGSERR_OK;	
+}
+
+static char linetxt[20];
+
+/* Form the title of vertical line eg 2015-Q1, 2015-Q2 etc */
+static char * 
+linetext(BarData_t bd)
+{
+  if(bd.Month == 1)
+   sprintf(linetxt,"%d-Q1",bd.Year);
+  else 
+  if(bd.Month == 4)
+   sprintf(linetxt,"%d-Q2",bd.Year);
+  else 
+  if(bd.Month == 7)
+   sprintf(linetxt,"%d-Q3",bd.Year);
+  else 
+  if(bd.Month == 10)
+    sprintf(linetxt,"%d-Q4",bd.Year); 
+  
+  return linetxt;  
+}
+
+/* Precompute the position of each vertical line for the daily, weekly and monthly chart */
+static void 
+QuarterBars()
+{
+  int nbrs;
+  
+  /* Daily chart */
+  nbrs = NBars(TF_DAY);
+  for(int counter = nbrs - 2; counter >= 0; counter --)
+  {
+    BarData_t bd = Bar(TF_DAY, counter);
+    if(bd.Month == 1 || bd.Month == 4||bd.Month == 7||bd.Month == 10)
+    {
+      BarData_t bd1 = Bar(TF_DAY, counter + 1);
+      if(bd1.Month != bd.Month)
+      {
+        ObjectHandler_t line;
+        line = AddVerticalLine(bd.Id);
+        linearray[nlines++] = line;
+        SetText(line,StrInit(linetext(bd)));
+        SetColor(line, COLOR_WHITE);
+       }  
+    }  
+  }
+  
+  /* Weekly chart */ 
+  nbrs = NBars(TF_WEEK);
+  for(int counter = nbrs - 2; counter >= 0; counter --)
+  {
+    BarData_t bd = Bar(TF_WEEK, counter);
+    if(bd.Month == 1 || bd.Month == 4||bd.Month == 7||bd.Month == 10)
+    {
+      BarData_t bd1 = Bar(TF_WEEK, counter + 1);
+      if(bd1.Month != bd.Month)
+      {
+        ObjectHandler_t line;
+        line = AddVerticalLine(bd.Id);
+        linearray[nlines++] = line;
+        SetText(line,StrInit(linetext(bd)));
+        SetColor(line, COLOR_WHITE);
+       }  
+    }  
+  }
+  
+  /* Monthly chart */
+  nbrs = NBars(TF_MONTH);
+  for(int counter = nbrs - 2; counter >= 0; counter --)
+  {
+    BarData_t bd = Bar(TF_MONTH, counter);
+    if(bd.Month == 1 || bd.Month == 4||bd.Month == 7||bd.Month == 10)
+    {
+      BarData_t bd1 = Bar(TF_MONTH, counter + 1);
+      if(bd1.Month != bd.Month)
+      {
+        ObjectHandler_t line;
+        line = AddVerticalLine(bd.Id);
+        linearray[nlines++] = line;
+        SetText(line,StrInit(linetext(bd)));
+        SetColor(line, COLOR_WHITE);
+      }  
+    }  
+  }
+}
+
+static int
+Loop()
+{
+  if(FirstRun)
+    QuarterBars();
+	
+  return CGSERR_OK;	
+}
+

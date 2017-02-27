@@ -1,6 +1,6 @@
 /* 
    CGScript 1.1 example for a Chart Geany module.
-   This modules draws a vertical lines at the begining of each calendar quarter.
+   This module draws a vertical line at the begining of each calendar quarter.
    Turn of the grid for better results.
    
    http://www.chartgeany.com/?id=cgscript
@@ -56,7 +56,8 @@ linetext(BarData_t bd)
   return linetxt;  
 }
 
-/* Precompute the position of each vertical line for the daily, weekly and monthly chart */
+/* Precompute the position of each vertical line for the daily, weekly 
+   and monthly chart */
 static void 
 QuarterBars()
 {

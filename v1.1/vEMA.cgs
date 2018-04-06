@@ -1,0 +1,88 @@
+/* An EMA curve with an attached label that shows the current EMA value */
+
+Property MODID[] = "0b52574159eeac9e4289ca85759a28b2"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static int nbrs;				/* Number of bars in TF_CUREENT */
+static Array_t ema;				/* EMA values */
+static ObjectHandler_t emaval;			/* Lable object for current EMA value */
+
+/* Calculate EMA */
+static void
+Calculate()
+{
+  nbrs = NBars(TF_CURRENT); 				// Number of bars of TF_CURRENT
+  ema = fEMA(TF_CURRENT, GetPeriod(NULL), CLOSE_PRICE);	// Call fEMA() for TF_CURRENT and period
+  
+  for(int counter = nbrs - 1; counter >= 0; counter --)
+    ValueSet(NULL, dArrayGet(ema, counter), counter);		// Copy fEMA() results to the value set of the module
+}
+
+/* Set the contents of emaval */
+static void
+setemaval()
+{
+  String_t ematxt;
+  int cbidx = ChartCurrentBar();
+  char emastr[64];
+  emastr[63] = 0;
+  
+  snprintf(emastr, 63, "EMA(%d):%s %.3f", GetPeriod(NULL), Date(cbidx), dArrayGet(ema, cbidx));
+  ematxt = StrInit(emastr);
+  SetText(emaval, ematxt);
+}
+
+static void 
+Event()
+{
+  switch(LastEvent)
+ {
+   case EV_MOUSE_ON_BAR:
+ /* We receive this event when the mouse pointer moves from one bar to another */
+      setemaval();
+      break;
+ /* We receive this event when an input variable has changed but we have nothing to do here */     
+   case EV_INPUT_VAR:
+     Calculate();
+     break;
+  }  	
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CURVE_OBJECT); /* Declare your object type here */
+
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static unsigned int lastTF  = UINT_MAX;
+  
+  if(!NeedsUpdate())
+   return CGSERR_OK;	
+   
+  if(FirstRun)
+  {
+    SetColor(NULL, COLOR_YELLOW); /* Default color */
+    
+    emaval = AddLabel();
+    SetXY(emaval,50,50); /* Default position */
+    SetFontWeight(emaval, FONTWEIGHT_BOLD); /* Default font weight */
+    SetColor(emaval, COLOR_YELLOW); /* Default color */
+  } 
+ 
+  if (nbrs != NBars(TF_CURRENT) || lastTF  != TF_CURRENT)
+  {
+    lastTF  = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT); 
+    Calculate();
+  }
+	
+  return CGSERR_OK;	
+}

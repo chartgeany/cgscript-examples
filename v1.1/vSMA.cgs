@@ -1,0 +1,89 @@
+/* A SMA curve with an attached label that shows the current SMA value */
+
+Property MODID[] = "bf9c64ce89faa74dc57e9f3206f10b11"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static int nbrs;				/* Number of bars in TF_CUREENT */
+static Array_t sma;				/* SMA values */
+static ObjectHandler_t smaval;			/* Lable object for current SMA value */
+
+/* Calculate SMA */
+static void
+Calculate()
+{
+  nbrs = NBars(TF_CURRENT); 				// Number of bars of TF_CURRENT
+  sma = fSMA(TF_CURRENT, GetPeriod(NULL), CLOSE_PRICE);	// Call fSMA() for TF_CURRENT and period
+  
+  for(int counter = nbrs - 1; counter >= 0; counter --)
+    ValueSet(NULL, dArrayGet(sma, counter), counter);		// Copy fSMA() results to the value set of the module
+}
+
+/* Set the contents of smaval */
+static void
+setsmaval()
+{
+  String_t smatxt;
+  int cbidx = ChartCurrentBar();
+  char smastr[64];
+  smastr[63] = 0;
+  
+  snprintf(smastr, 63, "SMA(%d):%s %.3f", GetPeriod(NULL), Date(cbidx), dArrayGet(sma, cbidx));
+  smatxt = StrInit(smastr);
+  SetText(smaval, smatxt);
+}
+
+static void 
+Event()
+{
+  switch(LastEvent)
+ {
+   case EV_MOUSE_ON_BAR:
+ /* We receive this event when the mouse pointer moves from one bar to another */
+      setsmaval();
+      break;
+ /* We receive this event when an input variable has changed but we have nothing to do here */     
+   case EV_INPUT_VAR:
+     Calculate();
+     break;
+  }  	
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CURVE_OBJECT); /* Declare your object type here */
+
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static unsigned int lastTF  = UINT_MAX;
+  
+  if(!NeedsUpdate())
+   return CGSERR_OK;	
+   
+  if(FirstRun)
+  {
+    SetColor(NULL, COLOR_YELLOW); /* Default color */
+    
+    smaval = AddLabel();
+    SetXY(smaval,50,50); /* Default position */
+    SetFontWeight(smaval, FONTWEIGHT_BOLD); /* Default font weight */
+    SetColor(smaval, COLOR_YELLOW); /* Default color */
+  } 
+  
+  if (nbrs != NBars(TF_CURRENT) || lastTF  != TF_CURRENT)
+  {
+    lastTF  = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT); 
+    Calculate();
+  }
+ 
+	
+  return CGSERR_OK;	
+}

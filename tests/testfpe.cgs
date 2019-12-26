@@ -32,7 +32,7 @@ Loop()
   static int a, b;
  
   if (a == 10) a /= b; 
- printf  ("test fpe %d ", ++a);
+  printf  ("test fpe %d ", ++a);
   	
   return CGSERR_OK;	
 }

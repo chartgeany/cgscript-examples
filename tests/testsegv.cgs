@@ -1,0 +1,40 @@
+/* A simple test for SIGSEGV recovery. 
+    Seems to work fine for CGScript 1.3 under:
+  
+    Windows 32 bit with tcc 
+    Linux 64 bit with gcc
+    Linux 64 bit with clang
+*/
+
+Property MODID[] = "f66dd8bf"; /* Do not change this line */
+Property MODAUTHOR[] = "Lucas Tsatiris: chartgeany@gmail.com"; 
+Property MODVERSION[] = "1.0.0"; 
+Property MODTYPE[] = "CHART OBJECT"; 
+
+static void 
+Event()
+{
+  	
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CONTAINER_OBJECT); /* Declare your object type here */
+      	
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static int a;
+  static int *pa = NULL;
+
+  if (a == 10)   *pa = 0;
+  printf ("test segv %d ", ++a);
+  	
+  return CGSERR_OK;	
+}
+

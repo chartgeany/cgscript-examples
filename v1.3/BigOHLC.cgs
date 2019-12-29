@@ -1,0 +1,97 @@
+/*
+    CGScript example for a big OHLC label on chart.
+    
+    http://www.chartgeany.com/?id=cgscript
+ */
+
+Property MODID[] = "201f2ae13cfc31621f889fafdf45afd7"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static Color_t 
+  upcolor = COLOR_GREEN, 		/* Color for uptrend bar. Will be used as input variable in Init() */
+  downcolor = COLOR_RED, 		/* Color for downtrend bar. Will be used as input variable in Init() */
+  nochangecolor = COLOR_WHITE;		/* Color for no price change. Will be used as input variable in Init() */
+  
+static ObjectHandler_t OHLCD;		/* Handler of the label object */
+
+static String_t OHLCDtxt;		/* Text of the lable object */
+
+/* Set open, high, low,close and date in OHLCD */
+static void
+setOHLCD()
+{
+  int cbidx = ChartCurrentBar(); 	/* Index of the current bar (bar under mouse pointer) */
+  char ohlcd[256];		/* C string needed by sprintf(3) */
+  
+  /* Form the OHLC string using sprintf(3). Label and text objects understand HTML too so
+     we'll use the <br> tag instead of '\n'. '\n' works very well in debug console and is intended
+     to be used there */
+  sprintf(ohlcd,"%s<br>O:%8.3f<br>C:%8.3f<br>H:%8.3f<br>L:%8.3f",
+    Date(cbidx),Open(cbidx),Close(cbidx),High(cbidx),Low(cbidx));
+  
+  /* Set the colors according to the trend of the bar */
+  if(Open(cbidx)>Close(cbidx)) /* Downtrend */
+    SetColor(OHLCD, downcolor);
+  else
+  if(Open(cbidx)<Close(cbidx)) /* Uptrend */
+    SetColor(OHLCD, upcolor);
+  else
+    SetColor(OHLCD, nochangecolor); /* No change */
+  
+  /* Initialize OHLCDtxt with ohlcd C string and set it to the label object */  
+  OHLCDtxt = StrInit(ohlcd);
+  SetText(OHLCD, OHLCDtxt);
+  
+  return;
+}
+
+static void 
+Event()
+{
+  switch(LastEvent)
+ {
+   case EV_MOUSE_ON_BAR:
+ /* We receive this event when the mouse pointer moves from one bar to another */
+      setOHLCD();
+      break;
+ /* We receive this event when an input variable has changed but we have nothing to do here */     
+   case EV_INPUT_VAR:
+     break;
+  }	
+  	
+  return;
+}
+
+static int
+Init()
+{
+  /* For container objects loaded as modules, input variables can change through the object manager (ALT + O)
+      by editing the module object. Double click over a contained object, just brings the settings
+      of the specific object */
+  SetObjectType(CONTAINER_OBJECT);
+  
+  /* Input variables */
+  InputColorVariable("Uptrend color:", upcolor, &upcolor, false);  
+  InputColorVariable("Downtrend color:", downcolor, &downcolor, false); 
+  InputColorVariable("No change color:", nochangecolor, &nochangecolor, false);     	
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  if(FirstRun)
+  {
+    OHLCD = AddLabel(); /* Add a label on the chart and assign its handler to OHLCD */
+    SetXY(OHLCD,200,200); /* Default position */
+    SetFontWeight(OHLCD, FONTWEIGHT_BOLD); /* Default font weight */
+    SetColor(OHLCD, nochangecolor); /* Default color */
+  }	
+  
+  /* We have nothing to do here. All work is done in Event() */
+  
+  return CGSERR_OK;	
+}
+

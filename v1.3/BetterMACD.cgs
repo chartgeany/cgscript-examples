@@ -1,0 +1,137 @@
+/*
+    CGScript example for a more customizable MACD indicator.
+    
+    http://www.chartgeany.com/?id=cgscript
+ */
+ 
+
+Property MODID[] = "bc4949174c2cacc5e49cd46511efe2f0"; /* Do not change this line */
+Property MODAUTHOR[] = "ChartGeany.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+/*
+MACD Line: (12-day EMA - 26-day EMA)
+
+Signal Line: 9-day EMA of MACD Line
+
+MACD Histogram: MACD Line - Signal Line
+*/
+
+static int paramema1 = 12, paramema2 = 26, paramsignal = 9, dim, maxbars, paramthick = 1;
+static Color_t macdcolor = COLOR_CYAN, signalcolor = COLOR_YELLOW, histcolor = 0xff5500;
+static Array_t ema1, ema2, macd, signal, hist;
+static ObjectHandler_t macdcurve , signalcurve, macdhist, hline;
+
+static void 
+Event()
+{
+  if(LastEvent == EV_INPUT_VAR)
+  {
+    SetColor(macdcurve, macdcolor);
+    SetColor(signalcurve, signalcolor);
+    SetColor(macdhist, histcolor);
+    SetThickness(macdhist, paramthick);
+  }	
+
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(SUBCHART_OBJECT); /* Declare your object type here */
+  
+  InputIntegerVariable("Line EMA 1:",  paramema1, 2, 30, &paramema1, true);
+  InputIntegerVariable("Line EMA 2:",  paramema2, 3, 31, &paramema2, true);
+  InputIntegerVariable("Signal:", paramsignal, 2, 20, &paramsignal, true); 
+  InputColorVariable("MACD color:", macdcolor, &macdcolor, false); 
+  InputColorVariable("Signal color:", signalcolor, &signalcolor, false);  
+  InputColorVariable("Histogram color:", histcolor, &histcolor, false);     	
+  InputIntegerVariable("Histogram thickness:", paramthick, 1, 4, &paramthick, false); 
+  SetSubChartRange(DBL_MIN, DBL_MAX);
+  
+  maxbars = NBars(TF_DAY) + 1;
+  macd = ArrayCreate(sizeof(double), maxbars); 
+  signal = ArrayCreate(sizeof(double), maxbars); 
+  hist = ArrayCreate(sizeof(double), maxbars); 
+  for(int counter =0; counter < maxbars; counter++)
+  {
+    double d = 0;
+    cArrayAppend(macd, d);
+    cArrayAppend(signal, d);
+    cArrayAppend(hist, d);
+  }
+
+  return CGSERR_OK;	
+}
+
+static void
+Calculate()
+{
+  double value;
+  
+  ema1 = fEMA(TF_CURRENT, paramema1, CLOSE_PRICE);
+  ema2 = fEMA(TF_CURRENT, paramema2, CLOSE_PRICE);
+  dim = ArraySize(ema1) < ArraySize(ema2) ? ArraySize(ema1) : ArraySize(ema2);
+  for(int counter=0;counter<dim;counter++)
+  {
+    value = dArrayGet(ema1,counter) - dArrayGet(ema2,counter);
+    cArrayPut(macd,counter,value);
+  }  
+  
+  signal = gEMA(paramsignal, macd);
+  dim = ArraySize(macd) < ArraySize(signal) ? ArraySize(macd) : ArraySize(signal);
+  for(int counter=0;counter<dim;counter++)
+  {
+    value = dArrayGet(macd,counter) - dArrayGet(signal,counter);
+    cArrayPut(hist,counter,value);
+  }
+}
+
+static int
+Loop()
+{
+  static int lastema1, lastema2, lastsignal, nbrs;
+  static unsigned int lastTF = UINT_MAX; 
+  
+  if(!NeedsUpdate())
+    return CGSERR_OK;	
+  
+  if(FirstRun)
+  {
+    macdcurve = AddCurve();
+    SetColor(macdcurve, macdcolor);
+    signalcurve = AddCurve();
+    SetColor(signalcurve, signalcolor);
+    macdhist = AddVerticalBars();
+    SetThickness(macdhist, paramthick);
+    SetColor(macdhist, histcolor);
+    hline = AddHorizontalLine();
+    SetColor(hline, ChartForeColor());
+    SetLevel(hline, 0);
+  }
+  
+  if (lastema1 != paramema1 || 
+      lastema2 != paramema2 ||
+      lastsignal != paramsignal ||
+      lastTF != TF_CURRENT ||
+      nbrs != NBars(TF_CURRENT))
+  {    
+    Calculate();
+    for(int counter = dim - 1; counter >= 0; counter --)
+    {
+       ValueSet(macdcurve, dArrayGet(macd, counter), counter);
+       ValueSet(signalcurve, dArrayGet(signal, counter), counter);
+       ValueSet(macdhist, dArrayGet(hist, counter), counter);
+    }  
+    
+    lastema1 = paramema1;
+    lastema2 = paramema2;
+    lastsignal = paramsignal;
+    lastTF = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT);
+  }	
+    
+  return CGSERR_OK;	
+}

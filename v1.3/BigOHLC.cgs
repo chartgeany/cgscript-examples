@@ -16,12 +16,15 @@ static Color_t
   
 static ObjectHandler_t OHLCD;		/* Handler of the label object */
 
-static String_t OHLCDtxt;		/* Text of the lable object */
+/* static String_t OHLCDtxt; */		/* Text of the label object */
+/* The above declaration causes a memory leak. It is better to declare it locally
+    in setOHLCD() */
 
 /* Set open, high, low,close and date in OHLCD */
 static void
 setOHLCD()
 {
+  String_t OHLCDtxt;                   /* Text of the label object */
   int cbidx = ChartCurrentBar(); 	/* Index of the current bar (bar under mouse pointer) */
   char ohlcd[256];		/* C string needed by sprintf(3) */
   
@@ -50,6 +53,8 @@ setOHLCD()
 static void 
 Event()
 {
+  static String_t OHLCDtxt;
+  
   switch(LastEvent)
  {
    case EV_MOUSE_ON_BAR:

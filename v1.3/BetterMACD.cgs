@@ -20,7 +20,7 @@ MACD Histogram: MACD Line - Signal Line
 
 static int paramema1 = 12, paramema2 = 26, paramsignal = 9, dim, maxbars, paramthick = 1;
 static Color_t macdcolor = COLOR_CYAN, signalcolor = COLOR_YELLOW, histcolor = 0xff5500;
-static Array_t ema1, ema2, macd, signal, hist;
+static Array_t macd, signal, hist;
 static ObjectHandler_t macdcurve , signalcurve, macdhist, hline;
 
 static void 
@@ -55,6 +55,7 @@ Init()
   macd = ArrayCreate(sizeof(double), maxbars); 
   signal = ArrayCreate(sizeof(double), maxbars); 
   hist = ArrayCreate(sizeof(double), maxbars); 
+  
   for(int counter =0; counter < maxbars; counter++)
   {
     double d = 0;
@@ -62,7 +63,7 @@ Init()
     cArrayAppend(signal, d);
     cArrayAppend(hist, d);
   }
-
+   
   return CGSERR_OK;	
 }
 
@@ -71,8 +72,9 @@ Calculate()
 {
   double value;
   
-  ema1 = fEMA(TF_CURRENT, paramema1, CLOSE_PRICE);
-  ema2 = fEMA(TF_CURRENT, paramema2, CLOSE_PRICE);
+  Array_t ema1 = fEMA(TF_CURRENT, paramema1, CLOSE_PRICE);    /* this is a hidden malloc() */
+  Array_t ema2 = fEMA(TF_CURRENT, paramema2, CLOSE_PRICE);   /* same as above */
+  
   dim = ArraySize(ema1) < ArraySize(ema2) ? ArraySize(ema1) : ArraySize(ema2);
   for(int counter=0;counter<dim;counter++)
   {
@@ -80,13 +82,16 @@ Calculate()
     cArrayPut(macd,counter,value);
   }  
   
-  signal = gEMA(paramsignal, macd);
+  signal = gEMA(paramsignal, macd); /* another hidden malloc () */
   dim = ArraySize(macd) < ArraySize(signal) ? ArraySize(macd) : ArraySize(signal);
   for(int counter=0;counter<dim;counter++)
   {
     value = dArrayGet(macd,counter) - dArrayGet(signal,counter);
     cArrayPut(hist,counter,value);
   }
+    
+  ArrayReset(ema1);   /* without this we have a memory leak */
+  ArrayReset(ema2);   /* same as above */ 
 }
 
 static int
@@ -125,6 +130,8 @@ Loop()
        ValueSet(signalcurve, dArrayGet(signal, counter), counter);
        ValueSet(macdhist, dArrayGet(hist, counter), counter);
     }  
+    
+    ArrayReset(signal);   /* without this we have a memory leak */
     
     lastema1 = paramema1;
     lastema2 = paramema2;

@@ -1,0 +1,196 @@
+/*
+   CGScript 1.5 example for a Chart Geany module.
+   This module draws three standard deviation channels. 
+   Turn of the grid for better results.
+
+   http://www.chartgeany.com/?id=cgscript
+*/
+
+Property MODID[] = "cf0ed7e3"; /* Do not change this line */
+Property MODAUTHOR[] = "chartgeany@gmail.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+ModuleLocal ObjectHandler_t topline1, bottomline1, topline2, bottomline2, topline3, bottomline3;
+ModuleLocal int nbrs, appliedprice = CLOSE_PRICE, period = 10, thick = 1;
+ModuleLocal int CM = 10; /* Channel Multiplier by 0.1 */
+ModuleLocal Color_t color = COLOR_CYAN;
+
+/* Calculate a of line equation: y=ax+b */
+static double
+CalculateA()
+{
+  Array_t calc = fLINEARREG_INTERCEPT(TF_CURRENT, GetPeriod(NULL), appliedprice);
+  const double result = dArrayGet(calc, 0);
+  
+  ArrayReset(calc);
+ 
+  return result;
+}
+
+/* Calculate b of line equation: y=ax+b */
+static double
+CalculateB()
+{
+  Array_t calc = fLINEARREG_SLOPE(TF_CURRENT, GetPeriod(NULL), appliedprice);
+  const double result = dArrayGet(calc, 0);
+  
+  ArrayReset(calc);
+ 
+  return result;
+}
+
+/* Get standard deviation */
+static double 
+GetStdDev(const Array_t arr, const int size)
+{
+    if(size<2)
+      return(0.0);
+    
+    double sum = 0.0;
+    for(int i=0;i<size;i++)
+      sum = sum + dArrayGet(arr, i);
+            
+    sum = sum / size;    
+    
+    double sum2 = 0.0;
+    for(int i=0;i<size;i++)
+      sum2 = sum2 + (dArrayGet(arr, i)- sum) * (dArrayGet(arr, i)- sum);
+     
+    sum2 = sum2 / (size-1);      
+    sum2 = sqrt(sum2);
+      
+    return(sum2);
+}
+
+/* Calculate middle, top and bottom lines */
+static void
+CalculateLines()
+{
+   const double a = CalculateA(), 
+                      b = CalculateB();
+   
+   const int pos =  GetPeriod(NULL);
+   
+   Array_t midvalues = ArrayCreate(sizeof(double), NBars(TF_CURRENT));  
+  
+   for(int i = 0; i < GetPeriod(NULL); i++)   
+   {
+     const double value = a+(b*i);
+     const double p = pos - (i + 1);
+     
+     ValueSet(NULL, value, p);
+     cArrayAppend(midvalues, value);
+   }  
+        
+  const double stddev = GetStdDev(midvalues, GetPeriod(NULL));
+  
+  for(int i = 0; i < GetPeriod(NULL); i++)   
+  {
+     const double S = stddev*CM*0.1;
+     const int P = pos - (i + 1);
+     
+     ValueSet(topline1, dArrayGet(midvalues,i)+S, P);
+     ValueSet(bottomline1, dArrayGet(midvalues,i)-S, P);
+     ValueSet(topline2, dArrayGet(midvalues,i)+S*2, P);
+     ValueSet(bottomline2, dArrayGet(midvalues,i)-S*2, P);
+     ValueSet(topline3, dArrayGet(midvalues,i)+S*3, P);
+     ValueSet(bottomline3, dArrayGet(midvalues,i)-S*3, P);
+  }
+  
+  /* values < -100f will make the curve invisible */    
+   for(int i  = GetPeriod(NULL); i < NBars(TF_CURRENT) ; i++)      
+   {
+      ValueSet(NULL, -101.0f, i);  
+      ValueSet(topline1, -101.0f, i);  
+      ValueSet(bottomline1, -101.0f, i);  
+      ValueSet(topline2, -101.0f, i);  
+      ValueSet(bottomline2, -101.0f, i);  
+      ValueSet(topline3, -101.0f, i);  
+      ValueSet(bottomline3, -101.0f, i);  
+   }  
+   
+   ArrayReset(midvalues);
+}
+
+static void 
+Event()
+{
+  if(LastEvent == EV_INPUT_VAR)	
+  {
+    SetPeriod(NULL, period);
+    SetPeriod(topline1, period);
+    SetPeriod(bottomline1, period);
+    SetPeriod(topline2, period);
+    SetPeriod(bottomline2, period);
+    SetPeriod(topline3, period);
+    SetPeriod(bottomline3, period);
+    SetColor(NULL, color);
+    SetThickness(NULL, thick);
+    SetColor(topline1, color);
+    SetColor(bottomline1, color);
+    SetColor(topline2, color);
+    SetColor(bottomline2, color);
+    SetColor(topline3, color);
+    SetColor(bottomline3, color);
+   
+    CalculateLines();
+  }  
+ 
+  return;	
+}
+
+static int
+Init()
+{
+  SetObjectType(CURVE_OBJECT); /* Declare your object type here */
+  
+  SetPeriod(NULL, period);
+  
+  InputIntegerVariable("Period:",  period, 2, 400, &period, true);
+  InputIntegerVariable("Multiplier x 0.1:",  CM, 1, 20, &CM, true);
+  InputIntegerVariable("Thickness:",  thick, 1, 10, &thick, true);
+  InputColorVariable("Color:", color, &color, false); 
+  
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static unsigned int lastTF  = UINT_MAX;
+  
+  if(!NeedsUpdate())
+    return CGSERR_OK;	
+  
+  if(FirstRun)
+  {
+  
+    topline1 = AddCurve(); 
+    bottomline1 = AddCurve();
+    topline2 = AddCurve(); 
+    bottomline2 = AddCurve();
+    topline3 = AddCurve(); 
+    bottomline3 = AddCurve();
+    
+    SetPeriod(NULL, period);
+    SetPeriod(topline1, period);
+    SetPeriod(bottomline1, period);
+    SetPeriod(topline2, period);
+    SetPeriod(bottomline2, period);
+    SetPeriod(topline3, period);
+    SetPeriod(bottomline3, period);
+        
+    CalculateLines();
+  }  
+  
+  if (nbrs != NBars(TF_CURRENT) || lastTF  != TF_CURRENT)
+  {
+    lastTF  = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT); 
+    CalculateLines();
+  }  
+                                                                     	
+  return CGSERR_OK;	
+}
+

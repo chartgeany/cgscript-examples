@@ -1,0 +1,78 @@
+/*
+    CGScript example for Volume-Weighted Average Price indicator in Chart Geany.
+    
+    https://www.investopedia.com/terms/v/vwap.asp
+    
+    https://chart-geany.sourceforge.io
+*/
+
+Property MODID[] = "7ad99b45"; /* Do not change this line */
+Property MODAUTHOR[] = "chartgeany@gmail.com"; /* Enter your name and email here */
+Property MODVERSION[] = "1.0.0"; /* Enter module's version here */
+Property MODTYPE[] = "CHART OBJECT"; /* Enter module's type here */
+
+static int nbrs;
+
+static void
+Calculate()
+{
+  for (int counter = 0; counter < nbrs - GetPeriod(NULL); counter++)
+  {
+     double SPV = 0.0f,  SV = 0.0f;
+     for (int s = counter; s < nbrs && s < counter + GetPeriod(NULL); s++)        
+     {
+        const double PV = ((High(s) + Low(s) + Close(s)) / 3) * Volume(s);
+        SPV += PV;
+        SV += Volume(s);
+     }
+     
+     const double value = SPV/SV;
+     ValueSet(NULL, value, counter);
+  }
+  
+  for (int counter =  nbrs - GetPeriod(NULL); counter < nbrs; counter++)
+    ValueSet(NULL, -100.0f, counter);
+}
+
+static void 
+Event()
+{
+
+  if(LastEvent == EV_INPUT_VAR)	
+   Calculate();
+   	
+  return;
+}
+
+static int
+Init()
+{
+  SetObjectType(CURVE_OBJECT); /* Declare your module type here */
+  SetPeriod(NULL, 10);
+      	
+  return CGSERR_OK;	
+}
+
+static int
+Loop()
+{
+  static unsigned int lastTF  = UINT_MAX;
+  
+  if(!NeedsUpdate())
+   return CGSERR_OK;	
+  
+  if(FirstRun)
+  {
+    SetColorRGB(NULL, 0, 170, 255);
+  }  
+    
+  if (nbrs != NBars(TF_CURRENT) || lastTF  != TF_CURRENT)
+  {
+    lastTF  = TF_CURRENT;
+    nbrs = NBars(TF_CURRENT); 
+    Calculate();
+  }
+  	
+  return CGSERR_OK;	
+}
+
